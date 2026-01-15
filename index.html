@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Catálogo digital - Mi Tienda</title>
+		<meta name="description" content="Catálogo digital sencillo. Contacta por WhatsApp para comprar." />
+		<meta property="og:title" content="Catálogo digital - Mi Tienda" />
+		<meta property="og:description" content="Catálogo digital sencillo. Contacta por WhatsApp para comprar." />
+		<meta property="og:image" content="https://via.placeholder.com/1200x630.png?text=Mi+Tienda" />
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<header class="site-header">
+			<div class="wrap">
+				<h1>Catálogo digital</h1>
+				<p class="lead">Presencia web sencilla. Contacta por WhatsApp para comprar o solicitar más información.</p>
+			</div>
+		</header>
+
+		<main class="wrap">
+			<section class="grid" aria-label="Catálogo de productos">
+				<!-- Productos se cargan dinámicamente desde LocalStorage -->
+			</section>
+
+			<section class="order-section">
+				<h2>Realizar un pedido</h2>
+				<form id="orderForm" class="order-form">
+					<input type="text" id="customerName" placeholder="Tu nombre" required />
+					<input type="email" id="customerEmail" placeholder="Tu email" required />
+					<textarea id="customerMessage" placeholder="Detalles de tu pedido..." rows="4" required></textarea>
+					<button type="submit" class="btn-submit">Enviar pedido por WhatsApp</button>
+				</form>
+			</section>
+		</main>
+
+		<a class="whatsapp-fab" aria-label="Contactar por WhatsApp">WhatsApp</a>
+
+		<footer class="site-footer">
+			<div class="wrap">
+				<small><a href="admin.html" class="admin-link">Panel de administrador</a></small>
+			</div>
+		</footer>
+
+		<script>
+			// ============ CONFIG ============
+			const PHONE = '1234567890';
+
+			// ============ STORAGE ============
+			function loadProducts() {
+				const stored = localStorage.getItem('catalogProducts');
+				return stored ? JSON.parse(stored) : null;
+			}
+
+			function saveProducts(products) {
+				localStorage.setItem('catalogProducts', JSON.stringify(products));
+			}
+
+			function getProducts() {
+				const stored = loadProducts();
+				if (stored) return stored;
+				// Productos por defecto
+				return [
+					{ id: 1, name: 'Producto 1', price: '$10.00', desc: 'Descripción breve y clara del Producto 1.', img: 'https://via.placeholder.com/600x400?text=Producto+1' },
+					{ id: 2, name: 'Producto 2', price: '$25.00', desc: 'Descripción breve y clara del Producto 2.', img: 'https://via.placeholder.com/600x400?text=Producto+2' },
+					{ id: 3, name: 'Producto 3', price: '$50.00', desc: 'Descripción breve y clara del Producto 3.', img: 'https://via.placeholder.com/600x400?text=Producto+3' }
+				];
+			}
+
+			// ============ UI ============
+			function renderProducts() {
+				const grid = document.querySelector('.grid');
+				const products = getProducts();
+				grid.innerHTML = products.map(p => `
+					<article class="card">
+						<img src="${p.img}" alt="${p.name}" />
+						<h3>${p.name}</h3>
+						<p class="price">${p.price}</p>
+						<p class="desc">${p.desc}</p>
+						<a class="btn" data-product="${p.name}" href="#">Contactar por WhatsApp</a>
+					</article>
+				`).join('');
+				attachProductButtons();
+			}
+
+			function attachProductButtons() {
+				document.querySelectorAll('.grid .btn').forEach(btn => {
+					btn.addEventListener('click', handleProductClick);
+				});
+			}
+
+			// ============ WHATSAPP ============
+			function makeMessage(product) {
+				return `Hola, me interesa el ${product}. ¿Está disponible?`;
+			}
+
+			function phoneToWaLink(phone, text) {
+				const encoded = encodeURIComponent(text);
+				return `https://wa.me/${phone}?text=${encoded}`;
+			}
+
+			function handleProductClick(e) {
+				e.preventDefault();
+				const product = this.dataset.product || 'producto';
+				const url = phoneToWaLink(PHONE, makeMessage(product));
+				window.open(url, '_blank', 'noopener');
+			}
+
+			// Botón flotante
+			const fab = document.querySelector('.whatsapp-fab');
+			fab.addEventListener('click', () => {
+				const url = phoneToWaLink(PHONE, 'Hola, quisiera más información sobre sus productos.');
+				window.open(url, '_blank', 'noopener');
+			});
+
+			// Formulario de pedido
+			document.getElementById('orderForm').addEventListener('submit', (e) => {
+				e.preventDefault();
+				const name = document.getElementById('customerName').value;
+				const email = document.getElementById('customerEmail').value;
+				const message = document.getElementById('customerMessage').value;
+				const fullMsg = `*Nuevo Pedido*\nNombre: ${name}\nEmail: ${email}\nMensaje:\n${message}`;
+				const url = phoneToWaLink(PHONE, fullMsg);
+				window.open(url, '_blank', 'noopener');
+				document.getElementById('orderForm').reset();
+			});
+
+			// ============ INIT ============
+			renderProducts();
+		</script>
+	</body>
+</html>

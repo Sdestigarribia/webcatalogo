@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Panel de administrador - Catálogo digital</title>
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<header class="site-header">
+			<div class="wrap">
+				<h1>Panel de administrador</h1>
+				<a href="index.html" style="text-decoration:none;color:var(--accent);font-weight:600">Volver al catálogo</a>
+			</div>
+		</header>
+
+		<div class="admin-container">
+			<div class="admin-header">
+				<h2>Gestionar productos</h2>
+				<p>Edita, agrega o elimina productos. Los cambios se guardan automáticamente.</p>
+			</div>
+
+			<button class="btn-add" onclick="openAddModal()">+ Agregar nuevo producto</button>
+
+			<div id="productsList" class="products-list">
+				<!-- Productos se cargan aquí -->
+			</div>
+		</div>
+
+		<!-- Modal para agregar/editar -->
+		<div id="productModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2 id="modalTitle">Agregar producto</h2>
+				</div>
+				<form id="productForm" class="modal-form">
+					<input type="hidden" id="productId" />
+					<input type="text" id="productName" placeholder="Nombre del producto" required />
+					<input type="text" id="productPrice" placeholder="Precio (ej: $10.00)" required />
+					<textarea id="productDesc" placeholder="Descripción" rows="3" required></textarea>
+					<input type="text" id="productImg" placeholder="URL de imagen" required />
+					<div class="modal-buttons">
+						<button type="submit" class="btn-save">Guardar</button>
+						<button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<script>
+			// ============ CONFIG ============
+			const PHONE = '1234567890';
+
+			// ============ STORAGE ============
+			function loadProducts() {
+				const stored = localStorage.getItem('catalogProducts');
+				return stored ? JSON.parse(stored) : null;
+			}
+
+			function saveProducts(products) {
+				localStorage.setItem('catalogProducts', JSON.stringify(products));
+				renderProducts();
+			}
+
+			function getProducts() {
+				const stored = loadProducts();
+				if (stored) return stored;
+				// Productos por defecto
+				return [
+					{ id: 1, name: 'Producto 1', price: '$10.00', desc: 'Descripción breve y clara del Producto 1.', img: 'https://via.placeholder.com/600x400?text=Producto+1' },
+					{ id: 2, name: 'Producto 2', price: '$25.00', desc: 'Descripción breve y clara del Producto 2.', img: 'https://via.placeholder.com/600x400?text=Producto+2' },
+					{ id: 3, name: 'Producto 3', price: '$50.00', desc: 'Descripción breve y clara del Producto 3.', img: 'https://via.placeholder.com/600x400?text=Producto+3' }
+				];
+			}
+
+			// ============ UI ============
+			function renderProducts() {
+				const list = document.getElementById('productsList');
+				const products = getProducts();
+				list.innerHTML = products.map(p => `
+					<div class="product-item">
+						<img src="${p.img}" alt="${p.name}" />
+						<h3>${p.name}</h3>
+						<p style="margin:8px 0;color:#666">${p.price}</p>
+						<p style="margin:8px 0;color:#666;font-size:0.95rem">${p.desc}</p>
+						<div class="btn-group">
+							<button class="btn-edit" onclick="editProduct(${p.id})">Editar</button>
+							<button class="btn-delete" onclick="deleteProduct(${p.id})">Eliminar</button>
+						</div>
+					</div>
+				`).join('');
+			}
+
+			// ============ MODAL ============
+			function openAddModal() {
+				document.getElementById('modalTitle').textContent = 'Agregar producto';
+				document.getElementById('productForm').reset();
+				document.getElementById('productId').value = '';
+				document.getElementById('productModal').classList.add('show');
+			}
+
+			function closeModal() {
+				document.getElementById('productModal').classList.remove('show');
+			}
+
+			function editProduct(id) {
+				const products = getProducts();
+				const product = products.find(p => p.id === id);
+				if (!product) return;
+
+				document.getElementById('modalTitle').textContent = 'Editar producto';
+				document.getElementById('productId').value = id;
+				document.getElementById('productName').value = product.name;
+				document.getElementById('productPrice').value = product.price;
+				document.getElementById('productDesc').value = product.desc;
+				document.getElementById('productImg').value = product.img;
+				document.getElementById('productModal').classList.add('show');
+			}
+
+			function deleteProduct(id) {
+				if (!confirm('¿Deseas eliminar este producto?')) return;
+				let products = getProducts();
+				products = products.filter(p => p.id !== id);
+				saveProducts(products);
+			}
+
+			// ============ FORM ============
+			document.getElementById('productForm').addEventListener('submit', (e) => {
+				e.preventDefault();
+				const id = document.getElementById('productId').value;
+				const name = document.getElementById('productName').value;
+				const price = document.getElementById('productPrice').value;
+				const desc = document.getElementById('productDesc').value;
+				const img = document.getElementById('productImg').value;
+
+				let products = getProducts();
+				if (id) {
+					// Editar
+					const idx = products.findIndex(p => p.id == id);
+					if (idx !== -1) {
+						products[idx] = { id: parseInt(id), name, price, desc, img };
+					}
+				} else {
+					// Agregar
+					const newId = Math.max(...products.map(p => p.id), 0) + 1;
+					products.push({ id: newId, name, price, desc, img });
+				}
+				saveProducts(products);
+				closeModal();
+			});
+
+			// Cerrar modal con ESC
+			document.addEventListener('keydown', (e) => {
+				if (e.key === 'Escape') closeModal();
+			});
+
+			// ============ INIT ============
+			renderProducts();
+		</script>
+	</body>
+</html>
